@@ -118,40 +118,30 @@ void *m_malloc(size_t size) {
 }
 
 
+
 void m_free(void *ptr) {
-if (!ptr) return;
+	p_meta tmp ;
+	tmp = ptr - META_SIZE;
+	tmp->free = 1;
 
-
-p_meta tmp = (p_meta *)((int)ptr-META_SIZE);
-if (tmp->free) return;
-if (tmp->prev && tmp->prev->free) {
-	tmp->prev->size += tmp->size + META_SIZE;
-	tmp->prev->next = tmp->next;
-	if (tmp->next)
-		tmp->next->prev = tmp->prev;
-
-}
-
-if (tmp->next  && tmp->next->free) {
-	tmp->next->size += tmp->size + META_SIZE;
-	tmp->next->prev = tmp->prev;
-	if (tmp->prev)
-		tmp->prev->next = tmp->next;
-	if (!tmp->prev)
-		base = tmp->next;
-}
-
-if (!tmp->next) {
-	if (tmp->prev) {
-		brk((void*)tmp);
-		tmp->prev->next = NULL;
-		tmp->prev = NULL;
+	
+	if (tmp->next) {
+		if ((tmp->next)->free) {
+			tmp->size += (tmp->next)->size + META_SIZE;
+			tmp->next = (tmp->next)->next;
+			(tmp->next)->prev = tmp;
+		}
+	}
+	else if (tmp->prev) {
+		(tmp->prev)->next = NULL;
+	}
+	if (tmp->prev && (tmp->prev)->free) {
+		(tmp->prev)->next = tmp->next;
+		(tmp->prev)->size += tmp->size + META_SIZE;
+		tmp = tmp->prev;
 	}
 }
-tmp->free = 1;
-return;
 
-}
 
 void* m_realloc(void* ptr, size_t size)
 {
